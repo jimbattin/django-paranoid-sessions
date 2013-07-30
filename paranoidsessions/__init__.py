@@ -147,12 +147,18 @@ being terminated.  Consider some of the following adjustments:
 __version__ = "0.2.0"
 
 import time
+import random
 
 from django.utils.http import cookie_date
 from django.utils.hashcompat import md5_constructor
 from django.core.urlresolvers import get_callable
-from django.contrib.sessions.backends.base import randrange
 from django.conf import settings
+
+# randrange functionality from Django 1.3.x
+if hasattr(random, 'SystemRandom'):
+  randrange = random.SystemRandom().randrange
+else:
+  randrange = random.randrange
 
 MAX_NONCE_SEED = 18446744073709551616L     # 2 << 63
 
@@ -219,7 +225,7 @@ class NonceStream(object):
         state = self.state
         self.state = md5_constructor(state + settings.SECRET_KEY).hexdigest()
         return self.state
-        
+
 
 class SessionFingerprint(object):
     """Object representing a unique request fingerprint for a session.
@@ -311,7 +317,7 @@ class SessionFingerprint(object):
         if request.session.modified or settings.SESSION_SAVE_EVERY_REQUEST:
             key = request.session.session_key
             self._set_cookie(request,response,settings.SESSION_COOKIE_NAME,key)
-            
+
     def request_hash(self,request):
         """Create a hash of the given request's fingerprint data.
 
@@ -391,7 +397,7 @@ class SessionFingerprint(object):
                 self.last_key_time = fingerprint.last_key_time
             if fingerprint.last_request_time > self.last_request_time:
                 self.last_request_time = fingerprint.last_request_time
-        
+
 
 class ParanoidSessionMiddleware(object):
     """Middleware implementing paranoid session checking.
